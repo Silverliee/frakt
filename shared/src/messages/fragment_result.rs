@@ -1,3 +1,5 @@
+use std::io;
+
 use serde::{Deserialize, Serialize};
 
 use crate::complementary_types::{pixeldata::PixelData, range::Range, resolution::Resolution, u8data::U8Data};
@@ -38,10 +40,14 @@ impl FragmentResult {
         return FragmentResult::new(id, resolution, range, pixel_data);
     }
 
-    pub fn serialize(&self) -> String {
+    pub fn serialize(&self) -> Result<String, io::Error> {
         let mut serialized = String::from("{\"FragmentResult\":");
-        serialized.push_str(&serde_json::to_string(&self).expect("Could not serialize request"));
-        serialized.push('}');
-        serialized
+        if let Ok(string_serialized) = &serde_json::to_string(&self) {
+            serialized.push_str(string_serialized);
+            serialized.push('}');
+            Ok(serialized)
+        } else {
+            Err(io::Error::new(io::ErrorKind::Other, "Erreur lors de la sérialisation du message FragmentResult"))
+        }
     }
 }

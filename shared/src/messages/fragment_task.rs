@@ -1,5 +1,7 @@
 
 
+use std::io;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{complementary_types::{range::Range, resolution::Resolution, u8data::U8Data}, fractal_implementation::fractal::FractalDescriptor};
@@ -14,23 +16,30 @@ pub struct FragmentTask {
 }
 
 impl FragmentTask {
-    // pub fn new(id: U8Data, max_iteration: u16, resolution: Resolution, range: Range) -> FragmentTask {
-    //     FragmentTask { id, max_iteration, resolution, range }
-    // }
+    pub fn new(id: U8Data, fractal: FractalDescriptor, max_iteration: u16, resolution: Resolution, range: Range) -> FragmentTask {
+         FragmentTask { id, fractal,max_iteration, resolution, range }
+     }
 
     //TODO: voir si y a pas plus simple
-    pub fn deserialize(json: &str) -> FragmentTask {
+    pub fn deserialize(json: &str) -> Result<FragmentTask, std::io::Error>{
         let mut res = json.replacen("{\"FragmentTask\":", "", 1);
-        res.pop(); //honteux
+        res.pop();
 
-        serde_json::from_str(&res).expect("Could not deserialize FragmentTask")
+        if let Ok(fragment_task) = serde_json::from_str(&res) {
+            Ok(fragment_task)
+        } else {
+            Err(io::Error::new(io::ErrorKind::Other, "Erreur lors de la desérialisation du message FragmentTask"))
+        }
     }
 
-    //TODO: voir si y a pas plus simple
-    pub fn serialize(&self) -> String {
+    pub fn serialize(&self) -> Result<String, std::io::Error> {
         let mut serialized = String::from("{\"FragmentTask\":");
-        serialized.push_str(&serde_json::to_string(&self).expect("Could not serialize request"));
-        serialized.push('}');
-        serialized
+        if let Ok(string_serialized) = &serde_json::to_string(&self) {
+            serialized.push_str(string_serialized);
+            serialized.push('}');
+            Ok(serialized)
+        } else {
+            Err(io::Error::new(io::ErrorKind::Other, "Erreur lors de la sérialisation du message FragmentTask"))
+        }
     }
 }

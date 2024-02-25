@@ -1,6 +1,7 @@
   use std::f64::consts::PI;
 
 use complex_math::Complex;
+use image::ImageError;
 
 use crate::{complementary_types::pixelintensity::PixelIntensity, messages::fragment_task::FragmentTask};
 
@@ -122,7 +123,7 @@ use crate::{complementary_types::pixelintensity::PixelIntensity, messages::fragm
       [(255.0 * r) as u8, (255.0 * g) as u8, (255.0 * b) as u8]
   }
 
-  pub fn create_image(task: &FragmentTask, pixel_intensity_vec: &Vec<PixelIntensity>) {
+  pub fn create_image(task: &FragmentTask, pixel_intensity_vec: &Vec<PixelIntensity>) -> Result<(), ImageError>{
       let image_width = task.resolution.nx as u32;
       let image_height = task.resolution.ny as u32;
 
@@ -136,5 +137,6 @@ use crate::{complementary_types::pixelintensity::PixelIntensity, messages::fragm
           count += 1;
       }
 
-      image_buffer.save(format!("{}.png", task.fractal)).unwrap();
+      image_buffer.save(format!("{}.png", task.fractal))?;
+      Ok(())
   }
