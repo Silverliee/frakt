@@ -1,3 +1,5 @@
+use std::io;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -14,10 +16,15 @@ impl FragmentRequest {
         }
     }
 
-    pub fn serialize(&self) -> String {
+    pub fn serialize(&self) -> Result<String,io::Error> {
         let mut serialized = String::from("{\"FragmentRequest\":");
-        serialized.push_str(&serde_json::to_string(&self).expect("Could not serialize request"));
-        serialized.push('}');
-        serialized
+        if let Ok(string_serialized) = &serde_json::to_string(&self) {
+            serialized.push_str(string_serialized);
+            serialized.push('}');
+            Ok(serialized)
+        } else {
+            Err(io::Error::new(io::ErrorKind::Other, "Erreur lors de la sérialisation du message FragmentRequest"))
+        }
+        
     }
 }
