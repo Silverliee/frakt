@@ -4,9 +4,13 @@ use serde::{Deserialize, Serialize};
 
 use complex_math::Complex;
 
-use crate::{complementary_types::pixelintensity::PixelIntensity, fractal_implementation::{fractal::GetDatas, fractal_calcul::nova_newton_raphson_z_4}, messages::fragment_task::FragmentTask};
+use crate::{
+    complementary_types::pixelintensity::PixelIntensity,
+    fractal_implementation::{fractal::GetDatas, fractal_calcul::nova_newton_raphson_z_4},
+    messages::message::FragmentTask,
+};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NovaNewtonRaphsonZ4 {}
 
 impl GetDatas for NovaNewtonRaphsonZ4 {
@@ -28,8 +32,7 @@ impl GetDatas for NovaNewtonRaphsonZ4 {
         while y < y_end {
             while x < x_end {
                 let pixel_complexe = Complex::new(x, y);
-                let fractal_result =
-                    nova_newton_raphson_z_4(pixel_complexe, max_iteration);
+                let fractal_result = nova_newton_raphson_z_4(pixel_complexe, max_iteration);
                 datas.push(PixelIntensity::new(fractal_result.0, fractal_result.1));
                 x += x_step;
             }

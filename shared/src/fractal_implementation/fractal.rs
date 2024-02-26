@@ -3,7 +3,6 @@ use std::fmt::{Display, Formatter};
 
 use serde::{Deserialize, Serialize};
 
-
 use crate::complementary_types::pixelintensity::PixelIntensity;
 use crate::fractal_types::iterated_sin_z::IteratedSinZ;
 use crate::fractal_types::julia_descriptor::JuliaDescriptor;
@@ -12,15 +11,13 @@ use crate::fractal_types::newton_raphson_z_3::NewtonRaphsonZ3;
 use crate::fractal_types::newton_raphson_z_4::NewtonRaphsonZ4;
 use crate::fractal_types::nova_newton_raphson_z_3::NovaNewtonRaphsonZ3;
 use crate::fractal_types::nova_newton_raphson_z_4::NovaNewtonRaphsonZ4;
-use crate::messages::fragment_task::FragmentTask;
-
-
+use crate::messages::message::FragmentTask;
 
 pub trait GetDatas {
     fn get_datas(&self, task: &FragmentTask) -> Vec<PixelIntensity>;
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum FractalDescriptor {
     Julia(JuliaDescriptor),
     Mandelbrot(Mandelbrot),
