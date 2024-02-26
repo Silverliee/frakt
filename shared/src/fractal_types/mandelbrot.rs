@@ -3,9 +3,13 @@ use std::fmt::{Display, Error, Formatter};
 
 use complex_math::Complex;
 
-use crate::{complementary_types::pixelintensity::PixelIntensity, fractal_implementation::{fractal::GetDatas, fractal_calcul::mandelbrot}, messages::fragment_task::FragmentTask};
+use crate::{
+    complementary_types::pixelintensity::PixelIntensity,
+    fractal_implementation::{fractal::GetDatas, fractal_calcul::mandelbrot},
+    messages::message::FragmentTask,
+};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Mandelbrot {}
 
 impl GetDatas for Mandelbrot {

@@ -4,9 +4,13 @@ use serde::{Deserialize, Serialize};
 
 use complex_math::Complex;
 
-use crate::{complementary_types::pixelintensity::PixelIntensity, fractal_implementation::{fractal::GetDatas, fractal_calcul::julia}, messages::fragment_task::FragmentTask};
+use crate::{
+    complementary_types::pixelintensity::PixelIntensity,
+    fractal_implementation::{fractal::GetDatas, fractal_calcul::julia},
+    messages::message::FragmentTask,
+};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct JuliaDescriptor {
     pub divergence_threshold_square: f64,
     pub c: Complex,

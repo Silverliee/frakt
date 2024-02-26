@@ -4,8 +4,12 @@ use serde::{Deserialize, Serialize};
 
 use complex_math::Complex;
 
-use crate::{complementary_types::pixelintensity::PixelIntensity, fractal_implementation::{fractal::GetDatas, fractal_calcul::newton_raphson_z_3}, messages::fragment_task::FragmentTask};
-#[derive(Serialize, Deserialize, Debug, Clone)]
+use crate::{
+    complementary_types::pixelintensity::PixelIntensity,
+    fractal_implementation::{fractal::GetDatas, fractal_calcul::newton_raphson_z_3},
+    messages::message::FragmentTask,
+};
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewtonRaphsonZ3 {}
 
 impl GetDatas for NewtonRaphsonZ3 {
