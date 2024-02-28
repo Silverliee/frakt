@@ -14,7 +14,7 @@ pub enum Fragment {
     FragmentTask(FragmentTask),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct FragmentTask {
     pub id: U8Data,
     pub fractal: FractalDescriptor,

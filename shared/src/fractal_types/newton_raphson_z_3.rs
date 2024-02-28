@@ -9,7 +9,7 @@ use crate::{
     fractal_implementation::{fractal::GetDatas, fractal_calcul::newton_raphson_z_3},
     messages::message::FragmentTask,
 };
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct NewtonRaphsonZ3 {}
 
 impl GetDatas for NewtonRaphsonZ3 {

@@ -9,9 +9,9 @@ use crate::{
     messages::message::FragmentTask,
 };
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct IteratedSinZ {
-    c: Complex,
+    pub c: Complex,
 }
 
 impl GetDatas for IteratedSinZ {

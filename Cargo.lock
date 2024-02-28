@@ -411,6 +411,7 @@ version = "0.1.0"
 dependencies = [
  "complex_math",
  "image",
+ "rand",
  "serde",
  "serde_json",
 ]
