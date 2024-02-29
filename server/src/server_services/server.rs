@@ -500,7 +500,7 @@ pub fn parse_args() -> String {
             // Récupérer les arguments valides
             let flag = args[1].clone();
             fractal_to_calcul = args[2].clone();
-            if flag != "--fractal" {
+            if flag != "--fractal" || flag != "-f" {
                 println!("wrong flag, missing information, try --help for more information",);
                 exit(0);
             }
