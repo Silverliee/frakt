@@ -1,401 +1,63 @@
+//! # Fractal Server
+//!
+//! The `fractal_server` module contains the main functionality for a server that performs fractal calculations and communicates with clients using TCP connections.
+//!
+//! The server supports different types of fractals, including Julia, Mandelbrot, IteratedSinZ, NewtonRaphsonZ3, NewtonRaphsonZ4, NovaNewtonRaphsonZ3, and NovaNewtonRaphsonZ4. Clients can request tasks, and the server distributes fractal calculation tasks to clients. Upon completion, clients send back results, and the server generates a full image once all tasks are completed.
+//!
+//! ## Usage
+//!
+//! To start the server, run the executable with optional flags. The available flags are:
+//!
+//! - `--help`: Displays usage information.
+//! - `--fractal <fractal_name>`: Specifies the type of fractal to calculate (default is Julia).
+//!
+//! Example:
+//!
+//! ```sh
+//! ./fractal_server --fractal Mandelbrot
+//! ```
+//!
+//! ## Fractal Types
+//!
+//! The server supports the following fractal types:
+//!
+//! - Julia
+//! - Mandelbrot
+//! - IteratedSinZ
+//! - NewtonRaphsonZ3
+//! - NewtonRaphsonZ4
+//! - NovaNewtonRaphsonZ3
+//! - NovaNewtonRaphsonZ4
+//!
+//! ## Server Thread
+//!
+//! The server spawns a dedicated thread to handle fractal calculations and client interactions. It listens for incoming client connections and delegates tasks to client threads. Once all tasks are completed, the server generates a full image of the fractal.
+//!
+//! ## Client Thread
+//!
+//! Each client connection is processed in a separate thread. Clients can request tasks from the server, perform the calculations, and send back results. The client thread communicates with the server thread using message passing.
+//!
+
 use std::{
     collections::HashMap,
-    env, fs,
+    fs,
     net::TcpListener,
     process::exit,
     sync::mpsc::{self, Sender},
 };
 
 mod server_services;
-use complex_math::Complex;
 use shared_lib::{
-    complementary_types::{
-        pixelintensity::PixelIntensity, point::Point, range::Range, resolution::Resolution,
-        u8data::U8Data,
-    },
-    fractal_implementation::fractal_calcul::color,
-    messages::message::{Fragment, FragmentTask},
-    messages_methods::messages_methods::send_message_to_client,
+    messages::message::Fragment, messages_methods::messages_methods::send_message_to_client,
 };
 
 use crate::server_services::server::{
-    format_data_to_pixel_intensity_vector, generate_unique_id, read_message_from_client,
+    create_params_for_iterated_sin_z, create_params_for_julia, create_params_for_mandelbrot,
+    create_params_for_newton_raphson_z_3, create_params_for_newton_raphson_z_4,
+    create_params_for_nova_newton_raphson_z_3, create_params_for_nova_newton_raphson_z_4,
+    format_data_to_pixel_intensity_vector, generate_unique_id, parse_args, put_color_in_image,
+    read_message_from_client, FractalCalculState,
 };
-
-#[derive(Debug, Clone)]
-pub struct FractalCalculState {
-    //16 squares
-    pub params: Vec<FragmentTask>,
-    pub tasks_state: HashMap<Vec<u8>, FragmentTask>,
-    pub calcul_state: HashMap<Vec<u8>, Vec<PixelIntensity>>,
-}
-
-fn create_params_for_julia() -> Vec<FragmentTask> {
-    let mut params = Vec::new();
-
-    let step_size_x = (1.2 - (-1.2)) / 4.0;
-    let step_size_y = (1.2 - (-1.2)) / 4.0;
-    let mut min_x = -1.2;
-    let mut min_y = -1.2;
-    let mut max_x = -0.6;
-    let mut max_y = -0.6;
-
-    for _i in 0..16 {
-        params.push(FragmentTask {
-            id: U8Data::new(0, 16),
-            fractal: shared_lib::fractal_implementation::fractal::FractalDescriptor::Julia(
-                shared_lib::fractal_types::julia_descriptor::JuliaDescriptor {
-                    c: Complex {
-                        re: 0.285,
-                        im: 0.013,
-                    },
-                    divergence_threshold_square: 4.0,
-                },
-            ),
-            max_iteration: 64,
-            resolution: Resolution { nx: 300, ny: 300 },
-            range: Range {
-                min: Point { x: min_x, y: min_y },
-                max: Point { x: max_x, y: max_y },
-            },
-        });
-
-        min_x = max_x;
-        if min_x < 1.2 {
-            max_x = max_x + step_size_x;
-        } else {
-            min_x = -1.2;
-            max_x = -0.6;
-            min_y = max_y;
-            max_y = max_y + step_size_y;
-        }
-    }
-    println!("Params created");
-
-    params
-}
-
-fn create_params_for_mandelbrot() -> Vec<FragmentTask> {
-    let mut params = Vec::new();
-
-    let step_size_x = (1.2 - (-1.2)) / 4.0;
-    let step_size_y = (1.2 - (-1.2)) / 4.0;
-    let mut min_x = -1.2;
-    let mut min_y = -1.2;
-    let mut max_x = -0.6;
-    let mut max_y = -0.6;
-
-    for _i in 0..16 {
-        params.push(FragmentTask {
-            id: U8Data::new(0, 16),
-            fractal: shared_lib::fractal_implementation::fractal::FractalDescriptor::Mandelbrot(
-                shared_lib::fractal_types::mandelbrot::Mandelbrot {},
-            ),
-            max_iteration: 64,
-            resolution: Resolution { nx: 300, ny: 300 },
-            range: Range {
-                min: Point { x: min_x, y: min_y },
-                max: Point { x: max_x, y: max_y },
-            },
-        });
-
-        min_x = max_x;
-        if min_x < 1.2 {
-            max_x = max_x + step_size_x;
-        } else {
-            min_x = -1.2;
-            max_x = -0.6;
-            min_y = max_y;
-            max_y = max_y + step_size_y;
-        }
-    }
-    println!("Params created");
-
-    params
-}
-
-fn create_params_for_iterated_sin_z() -> Vec<FragmentTask> {
-    let mut params = Vec::new();
-
-    let step_size_x = (1.2 - (-1.2)) / 4.0;
-    let step_size_y = (1.2 - (-1.2)) / 4.0;
-    let mut min_x = -1.2;
-    let mut min_y = -1.2;
-    let mut max_x = -0.6;
-    let mut max_y = -0.6;
-
-    for _i in 0..16 {
-        params.push(FragmentTask {
-            id: U8Data::new(0, 16),
-            fractal: shared_lib::fractal_implementation::fractal::FractalDescriptor::IteratedSinZ(
-                shared_lib::fractal_types::iterated_sin_z::IteratedSinZ {
-                    c: Complex { re: 1.0, im: 0.3 },
-                },
-            ),
-            max_iteration: 64,
-            resolution: Resolution { nx: 300, ny: 300 },
-            range: Range {
-                min: Point { x: min_x, y: min_y },
-                max: Point { x: max_x, y: max_y },
-            },
-        });
-
-        min_x = max_x;
-        if min_x < 1.2 {
-            max_x = max_x + step_size_x;
-        } else {
-            min_x = -1.2;
-            max_x = -0.6;
-            min_y = max_y;
-            max_y = max_y + step_size_y;
-        }
-    }
-    println!("Params created");
-
-    params
-}
-
-fn create_params_for_newton_raphson_z_3() -> Vec<FragmentTask> {
-    let mut params = Vec::new();
-
-    let step_size_x = (1.2 - (-1.2)) / 4.0;
-    let step_size_y = (1.2 - (-1.2)) / 4.0;
-    let mut min_x = -1.2;
-    let mut min_y = -1.2;
-    let mut max_x = -0.6;
-    let mut max_y = -0.6;
-
-    for _i in 0..16 {
-        params.push(FragmentTask {
-            id: U8Data::new(0, 16),
-            fractal:
-                shared_lib::fractal_implementation::fractal::FractalDescriptor::NewtonRaphsonZ3(
-                    shared_lib::fractal_types::newton_raphson_z_3::NewtonRaphsonZ3 {},
-                ),
-            max_iteration: 64,
-            resolution: Resolution { nx: 300, ny: 300 },
-            range: Range {
-                min: Point { x: min_x, y: min_y },
-                max: Point { x: max_x, y: max_y },
-            },
-        });
-
-        min_x = max_x;
-        if min_x < 1.2 {
-            max_x = max_x + step_size_x;
-        } else {
-            min_x = -1.2;
-            max_x = -0.6;
-            min_y = max_y;
-            max_y = max_y + step_size_y;
-        }
-    }
-    println!("Params created");
-
-    params
-}
-
-fn create_params_for_newton_raphson_z_4() -> Vec<FragmentTask> {
-    let mut params = Vec::new();
-
-    let step_size_x = (1.2 - (-1.2)) / 4.0;
-    let step_size_y = (1.2 - (-1.2)) / 4.0;
-    let mut min_x = -1.2;
-    let mut min_y = -1.2;
-    let mut max_x = -0.6;
-    let mut max_y = -0.6;
-
-    for _i in 0..16 {
-        params.push(FragmentTask {
-            id: U8Data::new(0, 16),
-            fractal:
-                shared_lib::fractal_implementation::fractal::FractalDescriptor::NewtonRaphsonZ4(
-                    shared_lib::fractal_types::newton_raphson_z_4::NewtonRaphsonZ4 {},
-                ),
-            max_iteration: 64,
-            resolution: Resolution { nx: 300, ny: 300 },
-            range: Range {
-                min: Point { x: min_x, y: min_y },
-                max: Point { x: max_x, y: max_y },
-            },
-        });
-
-        min_x = max_x;
-        if min_x < 1.2 {
-            max_x = max_x + step_size_x;
-        } else {
-            min_x = -1.2;
-            max_x = -0.6;
-            min_y = max_y;
-            max_y = max_y + step_size_y;
-        }
-    }
-    println!("Params created");
-
-    params
-}
-
-fn create_params_for_nova_newton_raphson_z_3() -> Vec<FragmentTask> {
-    let mut params = Vec::new();
-
-    let step_size_x = (1.2 - (-1.2)) / 4.0;
-    let step_size_y = (1.2 - (-1.2)) / 4.0;
-    let mut min_x = -1.2;
-    let mut min_y = -1.2;
-    let mut max_x = -0.6;
-    let mut max_y = -0.6;
-
-    for _i in 0..16 {
-        params.push(FragmentTask {
-            id: U8Data::new(0, 16),
-            fractal:
-                shared_lib::fractal_implementation::fractal::FractalDescriptor::NovaNewtonRaphsonZ3(
-                    shared_lib::fractal_types::nova_newton_raphson_z_3::NovaNewtonRaphsonZ3 {},
-                ),
-            max_iteration: 64,
-            resolution: Resolution { nx: 300, ny: 300 },
-            range: Range {
-                min: Point { x: min_x, y: min_y },
-                max: Point { x: max_x, y: max_y },
-            },
-        });
-
-        min_x = max_x;
-        if min_x < 1.2 {
-            max_x = max_x + step_size_x;
-        } else {
-            min_x = -1.2;
-            max_x = -0.6;
-            min_y = max_y;
-            max_y = max_y + step_size_y;
-        }
-    }
-    println!("Params created");
-
-    params
-}
-
-fn create_params_for_nova_newton_raphson_z_4() -> Vec<FragmentTask> {
-    let mut params = Vec::new();
-
-    let step_size_x = (1.2 - (-1.2)) / 4.0;
-    let step_size_y = (1.2 - (-1.2)) / 4.0;
-    let mut min_x = -1.2;
-    let mut min_y = -1.2;
-    let mut max_x = -0.6;
-    let mut max_y = -0.6;
-
-    for _i in 0..16 {
-        params.push(FragmentTask {
-            id: U8Data::new(0, 16),
-            fractal:
-                shared_lib::fractal_implementation::fractal::FractalDescriptor::NovaNewtonRaphsonZ4(
-                    shared_lib::fractal_types::nova_newton_raphson_z_4::NovaNewtonRaphsonZ4 {},
-                ),
-            max_iteration: 64,
-            resolution: Resolution { nx: 300, ny: 300 },
-            range: Range {
-                min: Point { x: min_x, y: min_y },
-                max: Point { x: max_x, y: max_y },
-            },
-        });
-
-        min_x = max_x;
-        if min_x < 1.2 {
-            max_x = max_x + step_size_x;
-        } else {
-            min_x = -1.2;
-            max_x = -0.6;
-            min_y = max_y;
-            max_y = max_y + step_size_y;
-        }
-    }
-    println!("Params created");
-
-    params
-}
-
-fn put_color_in_image(
-    task: &FragmentTask,
-    pixel_intensity_vec: &Vec<PixelIntensity>,
-    image_buffer: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
-) {
-    let mut x = ((task.range.min.x + 1.2) / 2.4 * 1200.0) as u32;
-    let mut y = ((task.range.min.y + 1.2) / 2.4 * 1200.0) as u32;
-
-    let y_end = y + 300;
-    let x_end = x + 300;
-
-    let mut count = 0;
-    while y < y_end && count < pixel_intensity_vec.len() {
-        while x < x_end && count < pixel_intensity_vec.len() {
-            let color = color(pixel_intensity_vec[count].zn as f64);
-            image_buffer.put_pixel(x, y, image::Rgb(color));
-            x += 1;
-            count += 1;
-        }
-        x = ((task.range.min.x + 1.2) / 2.4 * 1200.0) as u32;
-        y += 1;
-    }
-}
-
-fn parse_args() -> String {
-    let mut fractal_to_calcul = String::from("Julia");
-    let fractal_available = vec![
-        "Julia",
-        "Mandelbrot",
-        "IteratedSinZ",
-        "NewtonRaphsonZ3",
-        "NewtonRaphsonZ4",
-        "NovaNewtonRaphsonZ3",
-        "NovaNewtonRaphsonZ4",
-    ];
-
-    let args: Vec<String> = env::args().collect();
-
-    // Récupérer le nom de l'exécutable
-    let elements: Vec<&str> = args[0].split('/').collect();
-
-    match args.len() {
-        1 => {
-            // Utiliser les valeurs par défaut de fractal "Julia"
-        }
-        2 => {
-            // Changer pour "--help" quand possible de lancer en exécutable
-            if args[1] == "--help" {
-                println!("Usage : ./server <flag>");
-                println!("Flag: --fractal <fractal_name>");
-                println!("fractal_name: Julia, Mandelbrot, IteratedSinZ, NewtonRaphsonZ3, NewtonRaphsonZ4, NovaNewtonRaphsonZ3, NovaNewtonRaphson");
-
-                // Terminer le programme
-                exit(0);
-            }
-            // Récupérer les arguments valides
-            println!("wrong flag, missing information, try --help for more information",);
-            exit(0);
-        }
-        3 => {
-            // Récupérer les arguments valides
-            let flag = args[1].clone();
-            fractal_to_calcul = args[2].clone();
-            if flag != "--fractal" {
-                println!("wrong flag, missing information, try --help for more information",);
-                exit(0);
-            }
-            if !fractal_available.contains(&&*fractal_to_calcul) {
-                println!("wrong fractal name, try --help for more information",);
-                exit(0);
-            }
-        }
-        _ => {
-            // Nombres d'arguments incorrects
-            eprintln!("Error : Invalid number of arguments !");
-            eprintln!("wrong flag, missing information, try --help for more information",);
-            exit(1);
-        }
-    }
-    fractal_to_calcul
-}
 
 fn main() {
     let listener = match TcpListener::bind("127.0.0.1:8787") {

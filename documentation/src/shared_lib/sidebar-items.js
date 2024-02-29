@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["complementary_types","fractal_implementation","fractal_types","messages","messages_methods"]};

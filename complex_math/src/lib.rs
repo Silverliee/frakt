@@ -1,9 +1,54 @@
+//! # Complex Number Operations
+//!
+//! The `Complex` module provides a representation of complex numbers and various mathematical operations on them. This module supports addition, subtraction, multiplication, division, and other functions commonly associated with complex numbers.
+//!
+//! ## Usage
+//!
+//! The `Complex` struct can be used to create and manipulate complex numbers. Operations such as addition, subtraction, multiplication, division, computing the square of the absolute value, and others are defined for `Complex` numbers. Additionally, trigonometric and exponential operations are available.
+//!
+//! ## Examples
+//!
+//! Creating a complex number:
+//!
+//! ```rust
+//! use your_module_name::Complex;
+//!
+//! let z = Complex::new(1.0, 2.0);
+//! ```
+//!
+//! Performing operations on complex numbers:
+//!
+//! ```rust
+//! use your_module_name::Complex;
+//!
+//! let a = Complex::new(1.0, 2.0);
+//! let b = Complex::new(3.0, 4.0);
+//!
+//! let sum = a + b;
+//! let product = a * b;
+//!
+//! println!("Sum: {:?}", sum);
+//! println!("Product: {:?}", product);
+//! ```
+//!
+//! ## Implemented Operations
+//!
+//! - Addition (`+`)
+//! - Subtraction (`-`)
+//! - Multiplication (`*`)
+//! - Division (`/`)
+//! - Absolute Value (`abs`)
+//! - Sine (`sin`)
+//! - Exponential (`pow`)
+//! - ...and more.
+//!
+
 mod test_complex;
 
 use std::ops::{Add, Div, Mul, Sub};
 
 use serde::{Deserialize, Serialize};
-#[derive(Serialize, Deserialize, Clone, Copy, Debug,PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
 pub struct Complex {
     pub re: f64,
     pub im: f64,

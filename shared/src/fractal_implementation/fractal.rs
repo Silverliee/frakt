@@ -17,6 +17,7 @@ pub trait GetDatas {
     fn get_datas(&self, task: &FragmentTask) -> Vec<PixelIntensity>;
 }
 
+/// The fractal descriptor
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub enum FractalDescriptor {
     Julia(JuliaDescriptor),
@@ -29,6 +30,9 @@ pub enum FractalDescriptor {
 }
 
 impl FractalDescriptor {
+    /// Get the datas computed depending the fractal descriptor
+    /// * `task` - The fragment task
+    /// * Return: a vector of PixelIntensity
     pub fn get_datas(task: &FragmentTask) -> Vec<PixelIntensity> {
         return match &task.fractal {
             FractalDescriptor::Julia(julia) => julia.get_datas(&task),
@@ -51,6 +55,7 @@ impl FractalDescriptor {
 }
 
 impl Display for FractalDescriptor {
+    /// Display the fractal descriptor
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
             FractalDescriptor::Julia(descriptor) => write!(f, "{}", descriptor),

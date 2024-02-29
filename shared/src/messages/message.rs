@@ -146,32 +146,4 @@ impl FragmentRequest {
             maximal_work_load,
         }
     }
-
-    // pub fn serialize(&self) -> Result<String, io::Error> {
-    //     let mut serialized = String::from("{\"FragmentRequest\":");
-    //     if let Ok(string_serialized) = &serde_json::to_string(&self) {
-    //         serialized.push_str(string_serialized);
-    //         serialized.push('}');
-    //         Ok(serialized)
-    //     } else {
-    //         Err(io::Error::new(
-    //             io::ErrorKind::Other,
-    //             "Erreur lors de la sérialisation du message FragmentRequest",
-    //         ))
-    //     }
-    // }
-
-    // pub fn deserialize(json: &str) -> Result<FragmentRequest, std::io::Error> {
-    //     let mut res = json.replacen("{\"FragmentRequest\":", "", 1);
-    //     res.pop();
-
-    //     if let Ok(fragment_request) = serde_json::from_str(&res) {
-    //         Ok(fragment_request)
-    //     } else {
-    //         Err(io::Error::new(
-    //             io::ErrorKind::Other,
-    //             "Erreur lors de la desérialisation du message FragmentTask",
-    //         ))
-    //     }
-    // }
 }

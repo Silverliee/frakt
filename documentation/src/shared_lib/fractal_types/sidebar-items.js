@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["iterated_sin_z","julia_descriptor","mandelbrot","newton_raphson_z_3","newton_raphson_z_4","nova_newton_raphson_z_3","nova_newton_raphson_z_4"]};
