@@ -1,59 +1,50 @@
+//! # Fractal Processing Client
+//!
+//! The Fractal Processing Client is a Rust program designed to connect to a server and perform calculations for specific fractal models. It forms part of a distributed computing system where a server assigns tasks to clients, and clients return results.
+//!
+//! ## Usage
+//!
+//! The client can be configured with command-line arguments to specify the server's host and port. By default, it connects to the localhost on port 8787. The client continuously communicates with the server, requesting tasks, performing computations, and sending back results.
+//!
+//! ## Command-Line Arguments
+//!
+//! - `./client`: Run the client with default settings.
+//! - `./client <host>`: Specify the server's host, using the default port (8787).
+//! - `./client <host> <port>`: Specify both the server's host and port.
+//!
+//! ## Features
+//!
+//! - Dynamically handles command-line arguments to configure the connection.
+//! - Establishes a connection to the server and continuously communicates.
+//! - Requests tasks, performs computations, and sends back results.
+//!
+//! ## How to Run
+//!
+//! To run the client, execute the compiled binary from the command line. Optionally, specify the server's host and port using command-line arguments. For example:
+//!
+//! ```shell
+//! ./client                  # Run with default settings.
+//! ./client example.com      # Connect to 'example.com' on the default port.
+//! ./client example.com 9090 # Connect to 'example.com' on port 9090.
+//! ```
+//!
+//! ## Dependencies
+//!
+//! This program relies on the 'rand' crate for generating random numbers.
+//!
+//! ```toml
+//! [dependencies]
+//! rand = "0.8.5"
+//! ```
+
 use core::time;
 use std::process::exit;
-use std::{env, thread};
+use std::thread;
 
 mod client_services;
 use client_services::worker::ClientServices;
-
-fn parse_args() -> (String, u16) {
-    let mut host = String::from("localhost");
-    let mut port = 8787;
-
-    let args: Vec<String> = env::args().collect();
-
-    // Récupérer le nom de l'exécutable
-    let elements: Vec<&str> = args[0].split('/').collect();
-
-    match args.len() {
-        1 => {
-            // Utiliser les valeurs par défaut de host et port
-        }
-        2 => {
-            // Changer pour "--help" quand possible de lancer en exécutable
-            if args[1] == "--help" {
-                println!("Usage : ./client <name> <port>");
-                // Terminer le programme
-                exit(0);
-            } else {
-                // Récupérer les arguments valides
-                host = args[1].clone();
-                println!(
-                    "Pas de port spécifié, utilisation du port par défaut : {}",
-                    port
-                );
-            }
-        }
-        3 => {
-            // Récupérer les arguments valides
-            host = args[1].clone();
-            port = match args[2].clone().parse() {
-                Ok(port) => port,
-                Err(_) => 8787,
-            };
-        }
-        _ => {
-            // Nombres d'arguments incorrects
-            eprintln!("Erreur : Nombre incorrect d'arguments !");
-            eprintln!("Usage : ./client <name> <port>");
-            // Terminer le programme avec un code d'erreur
-            exit(1);
-        }
-    }
-    (host, port)
-}
-
 fn main() {
-    let (host, port) = parse_args();
+    let (host, port) = client_services::worker::ClientServices::parse_args();
 
     //Connexion
     let mut client = match ClientServices::new(&host, port) {

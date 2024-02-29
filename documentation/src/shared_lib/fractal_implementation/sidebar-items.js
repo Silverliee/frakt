@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["fractal","fractal_calcul"]};

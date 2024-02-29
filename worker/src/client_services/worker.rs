@@ -1,6 +1,47 @@
+//! # Fractal Processing Client Services
+//!
+//! The `ClientServices` module provides functionality for a client to connect to a server and perform tasks related to fractal processing. It includes methods for establishing a connection, sending requests, receiving tasks from the server, performing computations, creating images, and sending results back to the server.
+//!
+//! ## Dependencies
+//!
+//! The module relies on the following external crates:
+//!
+//! - `std::io`: Standard I/O library for handling input and output operations.
+//! - `std::net::TcpStream`: Standard network library for establishing a TCP connection.
+//! - `shared_lib`: A shared library containing fractal implementations, messages, and utility methods.
+//!
+//! ## Usage
+//!
+//! To use the `ClientServices` module, create an instance of the `ClientServices` struct by establishing a connection to the server. The client can then request tasks, perform computations, and send results back to the server.
+//!
+//! ## Example
+//!
+//! ```rust
+//! use std::io;
+//! use std::io::Write;
+//! use std::net::TcpStream;
+//!
+//! use shared_lib::fractal_implementation::fractal::FractalDescriptor;
+//! use shared_lib::messages::message::FragmentResult;
+//! use shared_lib::messages::message::FragmentTask;
+//! use shared_lib::messages::message::{Fragment, FragmentRequest};
+//! use shared_lib::messages_methods::messages_methods::read_message;
+//! use shared_lib::messages_methods::messages_methods::send_message;
+//!
+//! pub struct ClientServices {
+//!     stream: TcpStream,
+//! }
+//!
+//! // Rest of your code...
+//!
+//! ```
+//!
+
+use std::env;
 use std::io;
 use std::io::Write;
 use std::net::TcpStream;
+use std::process::exit;
 
 use shared_lib::fractal_implementation::fractal::FractalDescriptor;
 use shared_lib::fractal_implementation::fractal_calcul::create_image;
@@ -104,5 +145,50 @@ impl ClientServices {
         }
         println!("Datas is now completed and ready to be sent");
         Ok(datas)
+    }
+
+    ///function to get the arguments passed to the program
+    pub fn parse_args() -> (String, u16) {
+        let mut host = String::from("localhost");
+        let mut port = 8787;
+
+        let args: Vec<String> = env::args().collect();
+
+        match args.len() {
+            1 => {
+                // Utiliser les valeurs par défaut de host et port
+            }
+            2 => {
+                // Changer pour "--help" quand possible de lancer en exécutable
+                if args[1] == "--help" {
+                    println!("Usage : ./worker <ip> <port>");
+                    // Terminer le programme
+                    exit(0);
+                } else {
+                    // Récupérer les arguments valides
+                    host = args[1].clone();
+                    println!(
+                        "Pas de port spécifié, utilisation du port par défaut : {}",
+                        port
+                    );
+                }
+            }
+            3 => {
+                // Récupérer les arguments valides
+                host = args[1].clone();
+                port = match args[2].clone().parse() {
+                    Ok(port) => port,
+                    Err(_) => 8787,
+                };
+            }
+            _ => {
+                // Nombres d'arguments incorrects
+                eprintln!("Erreur : Nombre incorrect d'arguments !");
+                eprintln!("Usage : ./client <name> <port>");
+                // Terminer le programme avec un code d'erreur
+                exit(1);
+            }
+        }
+        (host, port)
     }
 }
