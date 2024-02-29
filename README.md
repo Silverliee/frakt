@@ -31,7 +31,7 @@ Fractal Processing Server est une application serveur basée sur Rust conçue po
 
    ```bash
    $ git clone https://github.com/Silverliee/frakt.git
-   $ cd serveur-rendu-fractal
+   $ cd frakt
    ```
 
 2. Build le projet :
