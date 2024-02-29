@@ -10,7 +10,7 @@ use crate::{
     messages::message::FragmentTask,
 };
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct NovaNewtonRaphsonZ4 {}
 
 impl GetDatas for NovaNewtonRaphsonZ4 {

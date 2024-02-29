@@ -17,7 +17,7 @@ pub trait GetDatas {
     fn get_datas(&self, task: &FragmentTask) -> Vec<PixelIntensity>;
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub enum FractalDescriptor {
     Julia(JuliaDescriptor),
     Mandelbrot(Mandelbrot),

@@ -8,6 +8,14 @@ use crate::messages::{
     message::Fragment,
 };
 
+pub fn send_message_to_client(
+    stream: &mut TcpStream,
+    fragment: Fragment,
+    data: Vec<u8>,
+) -> Result<(), io::Error> {
+    send_message(stream, fragment, &data)
+}
+
 pub fn send_message(
     stream: &mut TcpStream,
     fragment: Fragment,

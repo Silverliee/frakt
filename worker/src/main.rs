@@ -1,5 +1,6 @@
-use std::env;
+use core::time;
 use std::process::exit;
+use std::{env, thread};
 
 mod client_services;
 use client_services::worker::ClientServices;
@@ -12,7 +13,6 @@ fn parse_args() -> (String, u16) {
 
     // Récupérer le nom de l'exécutable
     let elements: Vec<&str> = args[0].split('/').collect();
-    let exec = elements.last().unwrap();
 
     match args.len() {
         1 => {
@@ -21,7 +21,7 @@ fn parse_args() -> (String, u16) {
         2 => {
             // Changer pour "--help" quand possible de lancer en exécutable
             if args[1] == "--help" {
-                println!("Usage : ./{} <name> <port>", exec);
+                println!("Usage : ./client <name> <port>");
                 // Terminer le programme
                 exit(0);
             } else {
@@ -36,12 +36,15 @@ fn parse_args() -> (String, u16) {
         3 => {
             // Récupérer les arguments valides
             host = args[1].clone();
-            port = args[2].clone().parse().unwrap();
+            port = match args[2].clone().parse() {
+                Ok(port) => port,
+                Err(_) => 8787,
+            };
         }
         _ => {
             // Nombres d'arguments incorrects
             eprintln!("Erreur : Nombre incorrect d'arguments !");
-            eprintln!("Usage : ./{} <name> <port>", exec);
+            eprintln!("Usage : ./client <name> <port>");
             // Terminer le programme avec un code d'erreur
             exit(1);
         }
@@ -75,45 +78,45 @@ fn main() {
         }
     };
 
-    let (mut task, mut datas);
-
     loop {
         //get task from server
-        (task, datas) = match client.get_task_from_server() {
-            Ok((task, datas)) => (task, datas),
-            Err(err) => {
-                eprintln!("Erreur lors de la réception de la tâche : {}", err);
-                exit(1);
-            }
-        };
+        match client.get_task_from_server() {
+            Ok(response) => {
+                let (task, datas) = response;
+                println!("Task received, {:?}", task);
+                //do work (and create image from client)
+                let datas_updated = match client.do_work(&task, datas) {
+                    Ok(datas) => datas,
+                    Err(err) => {
+                        eprintln!("Erreur lors de la réalisation de la tâche : {}", err);
+                        exit(1);
+                    }
+                };
 
-        //do work (and create image from client)
-        let datas_updated = match client.do_work(&task, datas) {
-            Ok(datas) => datas,
-            Err(err) => {
-                eprintln!("Erreur lors de la réalisation de la tâche : {}", err);
-                exit(1);
-            }
-        };
-
-        //send result to server (new connection needed) -> loop because result sent will make server send a new task
-        client = match ClientServices::new(&host, port) {
-            Ok(client) => {
-                println!("Client created and connected");
-                client
+                //send result to server (new connection needed) -> loop because result sent will make server send a new task
+                client = match ClientServices::new(&host, port) {
+                    Ok(client) => {
+                        println!("Client created and connected");
+                        client
+                    }
+                    Err(_) => {
+                        eprintln!("Erreur lors de la création et connexion du client");
+                        std::process::exit(1);
+                    }
+                };
+                match client.send_result(&task, &datas_updated) {
+                    Ok(_) => {
+                        println!("Result sent");
+                    }
+                    Err(err) => {
+                        eprintln!("Erreur lors de l'envoi du résultat : {}", err);
+                        exit(1);
+                    }
+                };
             }
             Err(_) => {
-                eprintln!("Erreur lors de la création et connexion du client");
-                std::process::exit(1);
-            }
-        };
-        match client.send_result(&task, &datas_updated) {
-            Ok(_) => {
-                println!("Result sent");
-            }
-            Err(err) => {
-                eprintln!("Erreur lors de l'envoi du résultat : {}", err);
-                exit(1);
+                eprintln!("No data to read currently, waiting 5sec before new attempt");
+                thread::sleep(time::Duration::from_secs(5));
             }
         };
     }

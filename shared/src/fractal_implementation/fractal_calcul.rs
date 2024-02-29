@@ -2,6 +2,7 @@ use std::{f64::consts::PI, fs};
 
 use complex_math::Complex;
 use image::ImageError;
+use rand::{thread_rng, Rng};
 
 use crate::{complementary_types::pixelintensity::PixelIntensity, messages::message::FragmentTask};
 
@@ -123,6 +124,14 @@ pub fn color(t: f64) -> [u8; 3] {
     [(255.0 * r) as u8, (255.0 * g) as u8, (255.0 * b) as u8]
 }
 
+fn generate_random_string() -> String {
+    let mut rng = thread_rng();
+
+    let random_number: u64 = rng.gen_range(1..=999_999_9999);
+
+    format!("{:010}", random_number)
+}
+
 pub fn create_image(
     task: &FragmentTask,
     pixel_intensity_vec: &Vec<PixelIntensity>,
@@ -142,7 +151,7 @@ pub fn create_image(
     }
 
     let path = path.unwrap_or("./images/");
-    let file_path = format!("{}{}.png", path, task.fractal);
+    let file_path = format!("{}{}_{}.png", path, task.fractal, generate_random_string());
 
     // Créez le répertoire s'il n'existe pas
     if let Some(parent_dir) = std::path::Path::new(&file_path).parent() {

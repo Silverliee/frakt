@@ -89,8 +89,18 @@ impl ClientServices {
 
         // add the datas calculated to the buffer
         for pixel in pixels_calculated {
-            datas.write_all(&pixel.zn.to_be_bytes()).unwrap();
-            datas.write_all(&pixel.count.to_be_bytes()).unwrap();
+            match datas.write_all(&pixel.zn.to_be_bytes()) {
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("Erreur lors de l'écriture des données de zn : {}", err);
+                }
+            }
+            match datas.write_all(&pixel.count.to_be_bytes()) {
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("Erreur lors de l'écriture des données de count : {}", err);
+                }
+            }
         }
         println!("Datas is now completed and ready to be sent");
         Ok(datas)
