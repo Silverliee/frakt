@@ -17,6 +17,7 @@
 //! - Dynamically handles command-line arguments to configure the connection.
 //! - Establishes a connection to the server and continuously communicates.
 //! - Requests tasks, performs computations, and sends back results.
+//! - Through Rayon, the computation are parallelized.
 //!
 //! ## How to Run
 //!

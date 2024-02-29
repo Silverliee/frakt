@@ -19,6 +19,7 @@ Fractal Processing Server est une application serveur basée sur Rust conçue po
 - **Rendu Fractal :** Le serveur prend en charge le rendu de divers fractales, y compris les ensembles de Julia, les ensembles de Mandelbrot, et plus encore. Le rendu se fait sous forme d'image .png.
 - **Gestion des Messages :** Gestion efficace des messages sur un flux TCP, avec des capacités de sérialisation et de désérialisation.
 - **Multi-client :** Le serveur est multi-threadé permettant à plusieurs clients de se connecter en simultanée et opérer les calculs de fractal en parallèle.
+- **Parallelisation des calculs :** Avec le module Rayon, les calculs sont effectués en parallèle sur le client afin d'optimiser le temps de calcul.
 
 ## Prérequis
 

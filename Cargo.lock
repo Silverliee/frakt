@@ -412,6 +412,7 @@ dependencies = [
  "complex_math",
  "image",
  "rand",
+ "rayon",
  "serde",
  "serde_json",
 ]
