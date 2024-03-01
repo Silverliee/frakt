@@ -8,9 +8,9 @@
 //!
 //! ## Command-Line Arguments
 //!
-//! - `./client`: Run the client with default settings.
-//! - `./client <host>`: Specify the server's host, using the default port (8787).
-//! - `./client <host> <port>`: Specify both the server's host and port.
+//! - `./worker`: Run the client with default settings.
+//! - `./worker [--ip=<ip>] [--port=<port>]`: Specify the server's host, using the default port (8787). Default ip is localhost.
+//! - `./worker <host> <port>`: Specify both the server's host and port.
 //!
 //! ## Features
 //!
@@ -24,9 +24,9 @@
 //! To run the client, execute the compiled binary from the command line. Optionally, specify the server's host and port using command-line arguments. For example:
 //!
 //! ```shell
-//! ./client                  # Run with default settings.
-//! ./client example.com      # Connect to 'example.com' on the default port.
-//! ./client example.com 9090 # Connect to 'example.com' on port 9090.
+//! ./worker                  # Run with default settings.
+//! ./worker example.com      # Connect to 'example.com' on the default port.
+//! ./worker example.com 9090 # Connect to 'example.com' on port 9090.
 //! ```
 //!
 //! ## Dependencies
@@ -54,7 +54,7 @@ fn main() {
             client
         }
         Err(_) => {
-            eprintln!("Erreur lors de la création et connexion du client");
+            eprintln!("Error while creating and connecting client");
             std::process::exit(1);
         }
     };
@@ -65,7 +65,7 @@ fn main() {
             println!("Request sent");
         }
         Err(err) => {
-            eprintln!("Erreur lors de l'envoi de la requête : {}", err);
+            eprintln!("Error while sending request : {}", err);
             exit(1);
         }
     };
@@ -80,7 +80,7 @@ fn main() {
                 let datas_updated = match client.do_work(&task, datas) {
                     Ok(datas) => datas,
                     Err(err) => {
-                        eprintln!("Erreur lors de la réalisation de la tâche : {}", err);
+                        eprintln!("Error while computing datas : {}", err);
                         exit(1);
                     }
                 };
@@ -92,7 +92,7 @@ fn main() {
                         client
                     }
                     Err(_) => {
-                        eprintln!("Erreur lors de la création et connexion du client");
+                        eprintln!("Error while creating and connecting client");
                         std::process::exit(1);
                     }
                 };
@@ -101,7 +101,7 @@ fn main() {
                         println!("Result sent");
                     }
                     Err(err) => {
-                        eprintln!("Erreur lors de l'envoi du résultat : {}", err);
+                        eprintln!("Error while sending result : {}", err);
                         exit(1);
                     }
                 };

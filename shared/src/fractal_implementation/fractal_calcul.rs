@@ -61,6 +61,8 @@ use rand::{thread_rng, Rng};
 
 use crate::{complementary_types::pixelintensity::PixelIntensity, messages::message::FragmentTask};
 
+use super::fractal::FractalDescriptor;
+
 ///Compute julia fractal value for given parameters
 /// * `z` - The complex number to compute the julia fractal value for z
 /// * `c` - The complex number to compute the julia fractal value for c
@@ -240,7 +242,11 @@ pub fn create_image(
 
     let mut count = 0;
     for (_x, _y, pixel) in image_buffer.enumerate_pixels_mut() {
-        let t = pixel_intensity_vec[count].zn as f64;
+        let t = match task.fractal {
+            FractalDescriptor::Julia(_) => pixel_intensity_vec[count].zn as f64,
+            FractalDescriptor::Mandelbrot(_) => pixel_intensity_vec[count].zn as f64,
+            _ => pixel_intensity_vec[count].count as f64,
+        };
 
         *pixel = image::Rgb(color((2.0 * t + 0.5) % 1.0));
         count += 1;

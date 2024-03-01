@@ -124,7 +124,7 @@ impl ClientServices {
                 println!("Image created");
             }
             Err(err) => {
-                eprintln!("Erreur lors de la création de l'image : {}", err);
+                eprintln!("Error while creating image : {}", err);
             }
         }
 
@@ -133,13 +133,13 @@ impl ClientServices {
             match datas.write_all(&pixel.zn.to_be_bytes()) {
                 Ok(_) => {}
                 Err(err) => {
-                    eprintln!("Erreur lors de l'écriture des données de zn : {}", err);
+                    eprintln!("Error while writting zn : {}", err);
                 }
             }
             match datas.write_all(&pixel.count.to_be_bytes()) {
                 Ok(_) => {}
                 Err(err) => {
-                    eprintln!("Erreur lors de l'écriture des données de count : {}", err);
+                    eprintln!("Error while writting count : {}", err);
                 }
             }
         }
@@ -149,46 +149,67 @@ impl ClientServices {
 
     ///function to get the arguments passed to the program
     pub fn parse_args() -> (String, u16) {
-        let mut host = String::from("localhost");
-        let mut port = 8787;
-
         let args: Vec<String> = env::args().collect();
 
-        match args.len() {
-            1 => {
-                // Utiliser les valeurs par défaut de host et port
+        let host_argument = args
+            .iter()
+            .find(|arg| arg.starts_with("--ip="))
+            .map(|arg| arg.trim_start_matches("--ip="));
+
+        let port_argument = args
+            .iter()
+            .find(|arg| arg.starts_with("--port="))
+            .map(|arg| arg.trim_start_matches("--port="));
+
+        let mut host = match host_argument {
+            Some(host) => {
+                println!("Host argument: {}", host);
+                host.to_string()
             }
-            2 => {
-                // Changer pour "--help" quand possible de lancer en exécutable
-                if args[1] == "--help" {
-                    println!("Usage : ./worker <ip> <port>");
-                    // Terminer le programme
-                    exit(0);
-                } else {
-                    // Récupérer les arguments valides
-                    host = args[1].clone();
-                    println!(
-                        "Pas de port spécifié, utilisation du port par défaut : {}",
-                        port
-                    );
+            None => "localhost".to_string(),
+        };
+
+        let mut port = match port_argument {
+            Some(host) => {
+                println!("Port argument: {}", host);
+                match host.parse::<u16>() {
+                    Ok(port) => port,
+                    Err(_) => {
+                        eprintln!("Error while parsing port argument");
+                        exit(1);
+                    }
                 }
             }
-            3 => {
-                // Récupérer les arguments valides
+            None => 8787,
+        };
+
+        if args.len() == 2 {
+            if args[1] == "--help" {
+                println!("Usage : ./worker 0.0.0.0");
+                println!("Usage : ./worker <flag>");
+                println!("Flag: --ip=<ip_adress>");
+                println!("Flag: --port=<port>");
+                // Terminer le programme
+                exit(0);
+            }
+            if !args[1].starts_with("--") {
                 host = args[1].clone();
-                port = match args[2].clone().parse() {
+            }
+        } else if args.len() == 3 {
+            if !args[1].starts_with("--") {
+                host = args[1].clone();
+            }
+            if !args[2].starts_with("--") {
+                port = match args[2].clone().parse::<u16>() {
                     Ok(port) => port,
-                    Err(_) => 8787,
+                    Err(_) => {
+                        eprintln!("Error while parsing port argument");
+                        exit(1);
+                    }
                 };
             }
-            _ => {
-                // Nombres d'arguments incorrects
-                eprintln!("Erreur : Nombre incorrect d'arguments !");
-                eprintln!("Usage : ./client <name> <port>");
-                // Terminer le programme avec un code d'erreur
-                exit(1);
-            }
         }
-        (host, port)
+
+        (host.to_string(), port)
     }
 }

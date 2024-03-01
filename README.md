@@ -57,23 +57,34 @@ Usage: server [OPTIONS]
 
 Options:
 
-  -f, --fractal
-          Choose the fractal to be computed
-          list of fractal available:
-          Julia,
-          Mandelbrot,
-          IteratedSinZ,
-          NewtonRaphsonZ3,
-          NewtonRaphsonZ4,
-          NovaNewtonRaphsonZ3,
-          NovaNewtonRaphsonZ4
+  --fractal
+      Choose the fractal to be computed
+      list of fractal available:
+       Julia,
+       Mandelbrot,
+       IteratedSinZ,
+       NetonRaphsonZ3,
+       NewtonRaphsonZ4,
+       NovaNewtonRaphsonZ3,
+       NovaNewtonRaphsonZ4
+       ex: --fractal=Julia
+
+   --ip
+      Choose the ip the server while listen tp
+      Default value is localhost
+      ex: --ip=0.0.0.0
+
+   --port
+      Choose the port
+      Default value is 8787
+      ex: --port=8080
 ```
 
 Pour lancer une instance du serveur:
 
 ```bash
 $ cd target/release
-$ ./server --fractal Mandelbrot
+$ ./server --fractal Mandelbrot --ip=127.0.0.1
 ```
 
 Par defaut, le serveur est parametré pour demander le calcul d'une fractal Julia.
@@ -92,6 +103,8 @@ $ ./worker --help
 
 ```
 Usage: worker <ip> <port>
+Default value for ip is localhost
+Default value for port is 8787
 ```
 
 Pour utiliser le client:
