@@ -9,12 +9,16 @@
 //! To start the server, run the executable with optional flags. The available flags are:
 //!
 //! - `--help`: Displays usage information.
-//! - `--fractal <fractal_name>`: Specifies the type of fractal to calculate (default is Julia).
+//! - `--fractal=<fractal_name>`: Specifies the type of fractal to calculate (default is Julia).
+//! - `--host=<host>`: Specifies the host to bind the server to (default is localhost).
+//! - `--port=<port>`: Specifies the port to bind the server to (default is 8787).
 //!
 //! Example:
 //!
 //! ```sh
-//! ./fractal_server --fractal Mandelbrot
+//! ./server --fractal=Mandelbrot
+//! ./server --host=127.0.0.1 --port=8787
+//! ./server 127.0.0.1
 //! ```
 //!
 //! ## Fractal Types
@@ -44,6 +48,8 @@ use std::{
     net::TcpListener,
     process::exit,
     sync::mpsc::{self, Sender},
+    thread,
+    time::Duration,
 };
 
 mod server_services;
@@ -56,11 +62,13 @@ use crate::server_services::server::{
     create_params_for_newton_raphson_z_3, create_params_for_newton_raphson_z_4,
     create_params_for_nova_newton_raphson_z_3, create_params_for_nova_newton_raphson_z_4,
     format_data_to_pixel_intensity_vector, generate_unique_id, parse_args, put_color_in_image,
-    read_message_from_client, FractalCalculState,
+    read_message_from_client, reset_state, FractalCalculState,
 };
 
 fn main() {
-    let listener = match TcpListener::bind("127.0.0.1:8787") {
+    let (host, port, mut fractal_to_calcul) = parse_args();
+    let adress = format!("{}:{}", host, port);
+    let listener = match TcpListener::bind(&adress) {
         Ok(listener) => listener,
         Err(err) => {
             eprintln!("Error binding to address: {}", err);
@@ -68,14 +76,14 @@ fn main() {
         }
     };
 
-    println!("Server listening on 127.0.0.1:8787");
-    let fractal_to_calcul = parse_args();
+    println!("Server listening on {}", adress);
 
     let (tx, rx) = mpsc::channel();
 
     println!("create server thread");
     std::thread::spawn(move || {
         println!("Server Thread: I am created");
+
         let image_width = 1200 as u32;
         let image_height = 1200 as u32;
 
@@ -107,25 +115,30 @@ fn main() {
             match fragment {
                 Fragment::FragmentRequest(_) => {
                     //recuperer une tache et l envoyer avec le tx.send(task)
-                    if fractal_calcul_state.params.len() != 0 {
-                        let id = generate_unique_id();
-                        let task = match fractal_calcul_state.params.pop() {
-                            Some(task) => task,
-                            None => {
-                                println!("Server Thread: No more task");
-                                return;
-                            }
-                        };
-                        //enregistrer la tache dans le state avec son id
-                        fractal_calcul_state.tasks_state.insert(id.clone(), task);
-                        match tx.send((Fragment::FragmentTask(task), id.clone())) {
-                            Ok(_) => println!("Server Thread: send fragment task to client thread"),
-                            Err(_) => println!(
-                                "Server Thread: Error sending fragment task to client thread"
-                            ),
-                        };
+                    //si pas de tache, le serveur en genere automatiquement au bout de 5sec
+                    if fractal_calcul_state.params.len() == 0 {
+                        println!("Server Thread: No more task, waiting 5sec before generating a new fractal");
+                        thread::sleep(Duration::from_secs(5));
+                        fractal_to_calcul = reset_state(&mut fractal_calcul_state);
                     }
+                    let id = generate_unique_id();
+                    let task = match fractal_calcul_state.params.pop() {
+                        Some(task) => task,
+                        None => {
+                            println!("Server Thread: No more task");
+                            return;
+                        }
+                    };
+                    //enregistrer la tache dans le state avec son id
+                    fractal_calcul_state.tasks_state.insert(id.clone(), task);
+                    match tx.send((Fragment::FragmentTask(task), id.clone())) {
+                        Ok(_) => println!("Server Thread: send fragment task to client thread"),
+                        Err(_) => {
+                            println!("Server Thread: Error sending fragment task to client thread")
+                        }
+                    };
                 }
+
                 Fragment::FragmentResult(result) => {
                     //recuperer le resultat et creer l image en cherchant la tache grace a l'id
                     let id_size = result.id.count as usize;
@@ -147,54 +160,63 @@ fn main() {
                         }
                     };
 
+                    //on construit l image globale au fur et a mesure que les resultats sont recupérés
                     put_color_in_image(&task_calculated, &pixel_intensities, &mut image_buffer);
 
-                    //recuperer une tache et l envoyer avec le tx.send(task)
-                    if fractal_calcul_state.params.len() != 0 {
-                        let task = match fractal_calcul_state.params.pop() {
-                            Some(task) => task,
-                            None => {
-                                println!("Server Thread: No more task");
-                                return;
+                    //Si l'image est complete, la sauvegarder et vider le state
+                    if fractal_calcul_state.calcul_state.len() == 16 {
+                        let file_path = format!("images/server/full{fractal_to_calcul}.png");
+                        println!("Server Thread: create Full Image, path: {}", file_path);
+
+                        // Créez le répertoire s'il n'existe pas
+                        if let Some(parent_dir) = std::path::Path::new(&file_path).parent() {
+                            if !parent_dir.exists() {
+                                if let Err(err) = fs::create_dir_all(parent_dir) {
+                                    eprintln!("Error creating directory: {}", err);
+                                }
+                            }
+                        }
+
+                        match image_buffer.save(&file_path) {
+                            Ok(_) => {
+                                println!("Server Thread: Image saved");
+                            }
+                            Err(err) => {
+                                eprintln!("Error saving image: {}", err);
                             }
                         };
-                        let new_id = generate_unique_id();
-                        let _ = tx.send((Fragment::FragmentTask(task), new_id.clone()));
-                        println!("Server Thread: send fragment task to client thread");
-
-                        //enregistrer la tache dans le state avec son id
-
-                        fractal_calcul_state
-                            .tasks_state
-                            .insert(new_id.clone(), task);
+                        //on reset le state
+                        fractal_calcul_state.calcul_state.clear();
+                        fractal_calcul_state.tasks_state.clear();
                     }
+
+                    //recuperer une tache et l envoyer avec le tx.send(task)
+                    //si pas de tache, le serveur en genere automatiquement au bout de 5sec
+                    if fractal_calcul_state.params.len() == 0 {
+                        println!("Server Thread: No more task, waiting 5sec before generating a new fractal");
+                        thread::sleep(Duration::from_secs(5));
+                        fractal_to_calcul = reset_state(&mut fractal_calcul_state);
+                    }
+                    let task = match fractal_calcul_state.params.pop() {
+                        Some(task) => task,
+                        None => {
+                            println!("Server Thread: No more task");
+                            return;
+                        }
+                    };
+                    let new_id = generate_unique_id();
+                    let _ = tx.send((Fragment::FragmentTask(task), new_id.clone()));
+                    println!("Server Thread: send fragment task to client thread");
+
+                    //enregistrer la tache dans le state avec son id
+
+                    fractal_calcul_state
+                        .tasks_state
+                        .insert(new_id.clone(), task);
                 }
                 _ => {
                     println!("Unknown request received");
                 }
-            }
-            if fractal_calcul_state.calcul_state.len() == 16 {
-                let file_path = format!("images/server/full{fractal_to_calcul}.png");
-                println!("Server Thread: create Full Image, path: {}", file_path);
-
-                // Créez le répertoire s'il n'existe pas
-                if let Some(parent_dir) = std::path::Path::new(&file_path).parent() {
-                    if !parent_dir.exists() {
-                        if let Err(err) = fs::create_dir_all(parent_dir) {
-                            eprintln!("Error creating directory: {}", err);
-                        }
-                    }
-                }
-
-                match image_buffer.save(&file_path) {
-                    Ok(_) => {
-                        println!("Server Thread: Image saved");
-                    }
-                    Err(err) => {
-                        eprintln!("Error saving image: {}", err);
-                    }
-                };
-                break;
             }
         }
     });

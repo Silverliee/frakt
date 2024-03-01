@@ -223,8 +223,9 @@
 									<code>./worker</code>: Run the client with default settings.
 								</li>
 								<li>
-									<code>./worker &lt;host&gt;</code>: Specify the server’s host,
-									using the default port (8787).
+									<code>./worker [--ip=&lt;ip&gt;] [--port=&lt;port&gt;]</code>:
+									Specify the server’s host, using the default port (8787).
+									Default ip is localhost.
 								</li>
 								<li>
 									<code>./worker &lt;host&gt; &lt;port&gt;</code>: Specify both
@@ -244,6 +245,7 @@
 								<li>
 									Requests tasks, performs computations, and sends back results.
 								</li>
+								<li>Through Rayon, the computation are parallelized.</li>
 							</ul>
 							<h3 id="how-to-run"><a href="#how-to-run">How to Run</a></h3>
 							<p>

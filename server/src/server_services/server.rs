@@ -16,7 +16,7 @@
 //! let unique_id = generate_unique_id();
 //! ```
 //!
-//! Reading a message from a client:
+//! Reading a message from a client:http://88.166.25.87/
 //!
 //! ```rust
 //! use std::io;
@@ -50,6 +50,7 @@ use std::process::exit;
 use std::{env, io};
 
 use complex_math::Complex;
+use rand::seq::SliceRandom;
 use shared_lib::complementary_types::pixelintensity::PixelIntensity;
 
 use rand::RngCore;
@@ -57,6 +58,7 @@ use shared_lib::complementary_types::point::Point;
 use shared_lib::complementary_types::range::Range;
 use shared_lib::complementary_types::resolution::Resolution;
 use shared_lib::complementary_types::u8data::U8Data;
+use shared_lib::fractal_implementation::fractal::FractalDescriptor;
 use shared_lib::fractal_implementation::fractal_calcul::color;
 use shared_lib::messages::message::{Fragment, FragmentTask};
 use shared_lib::messages_methods::messages_methods::read_message;
@@ -452,8 +454,13 @@ pub fn put_color_in_image(
     let mut count = 0;
     while y < y_end && count < pixel_intensity_vec.len() {
         while x < x_end && count < pixel_intensity_vec.len() {
-            let color = color(pixel_intensity_vec[count].zn as f64);
+            let color = match task.fractal {
+                FractalDescriptor::Julia(_) => color(pixel_intensity_vec[count].zn as f64),
+                FractalDescriptor::Mandelbrot(_) => color(pixel_intensity_vec[count].zn as f64),
+                _ => color(pixel_intensity_vec[count].count as f64),
+            };
             image_buffer.put_pixel(x, y, image::Rgb(color));
+
             x += 1;
             count += 1;
         }
@@ -463,10 +470,72 @@ pub fn put_color_in_image(
 }
 
 ///function to get the arguments passed to the server
-/// * Return: `String` - the fractal name to be calculated
-pub fn parse_args() -> String {
-    let mut fractal_to_calcul = String::from("Julia");
-    let fractal_available = vec![
+/// * Return: (`String`,`String`,`String`) - the ip, the port and the fractal name to be calculated
+pub fn parse_args() -> (String, String, String) {
+    let args: Vec<String> = env::args().collect();
+
+    // Vous pouvez également récupérer des arguments spécifiques en utilisant des indices
+    let fractal_argument = args
+        .iter()
+        .find(|arg| arg.starts_with("--fractal="))
+        .map(|arg| arg.trim_start_matches("--fractal="));
+
+    let host_argument = args
+        .iter()
+        .find(|arg| arg.starts_with("--ip="))
+        .map(|arg| arg.trim_start_matches("--ip="));
+
+    let port_argument = args
+        .iter()
+        .find(|arg| arg.starts_with("--port="))
+        .map(|arg| arg.trim_start_matches("--port="));
+
+    let fractal = match fractal_argument {
+        Some(fractal) => {
+            println!("Fractal argument: {}", fractal);
+            fractal
+        }
+        None => "Julia",
+    };
+
+    let mut host = match host_argument {
+        Some(host) => {
+            println!("Host argument: {}", host);
+            host.to_string()
+        }
+        None => "localhost".to_string(),
+    };
+
+    let port = match port_argument {
+        Some(host) => {
+            println!("Port argument: {}", host);
+            host.to_string()
+        }
+        None => "8787".to_string(),
+    };
+
+    if args.len() == 2 {
+        if args[1] == "--help" {
+            println!("Usage : ./server 0.0.0.0");
+            println!("Usage : ./server <flag>");
+            println!("Flag: --fractal=<fractal_name>");
+            println!("fractal_name: Julia, Mandelbrot, IteratedSinZ, NewtonRaphsonZ3, NewtonRaphsonZ4, NovaNewtonRaphsonZ3, NovaNewtonRaphson");
+            println!("Flag: --ip=<ip_adress>");
+            // Terminer le programme
+            exit(0);
+        }
+        if !args[1].starts_with("--") {
+            host = args[1].clone();
+        }
+    } else {
+    }
+
+    (host.to_string(), port.to_string(), fractal.to_string())
+}
+
+pub fn reset_state(fractal_calcul_state: &mut FractalCalculState) -> String {
+    //used to generate a random fractal for task
+    let random_fractal_name = vec![
         "Julia",
         "Mandelbrot",
         "IteratedSinZ",
@@ -476,45 +545,56 @@ pub fn parse_args() -> String {
         "NovaNewtonRaphsonZ4",
     ];
 
-    let args: Vec<String> = env::args().collect();
+    let new_fractal = random_fractal_name.choose(&mut rand::thread_rng());
 
-    match args.len() {
-        1 => {
-            // Utiliser les valeurs par défaut de fractal "Julia"
+    return match new_fractal {
+        Some(&"Julia") => {
+            fractal_calcul_state
+                .params
+                .extend(create_params_for_julia());
+            "Julia".to_string()
         }
-        2 => {
-            // Changer pour "--help" quand possible de lancer en exécutable
-            if args[1] == "--help" {
-                println!("Usage : ./server <flag>");
-                println!("Flag: --fractal <fractal_name>");
-                println!("fractal_name: Julia, Mandelbrot, IteratedSinZ, NewtonRaphsonZ3, NewtonRaphsonZ4, NovaNewtonRaphsonZ3, NovaNewtonRaphson");
-
-                // Terminer le programme
-                exit(0);
-            }
-            // Récupérer les arguments valides
-            println!("wrong flag, missing information, try --help for more information",);
-            exit(0);
+        Some(&"Mandelbrot") => {
+            fractal_calcul_state
+                .params
+                .extend(create_params_for_mandelbrot());
+            "Mandelbrot".to_string()
         }
-        3 => {
-            // Récupérer les arguments valides
-            let flag = args[1].clone();
-            fractal_to_calcul = args[2].clone();
-            if flag != "--fractal" || flag != "-f" {
-                println!("wrong flag, missing information, try --help for more information",);
-                exit(0);
-            }
-            if !fractal_available.contains(&&*fractal_to_calcul) {
-                println!("wrong fractal name, try --help for more information",);
-                exit(0);
-            }
+        Some(&"IteratedSinZ") => {
+            fractal_calcul_state
+                .params
+                .extend(create_params_for_iterated_sin_z());
+            "IteratedSinZ".to_string()
+        }
+        Some(&"NewtonRaphsonZ3") => {
+            fractal_calcul_state
+                .params
+                .extend(create_params_for_newton_raphson_z_3());
+            "NewtonRaphsonZ3".to_string()
+        }
+        Some(&"NewtonRaphsonZ4") => {
+            fractal_calcul_state
+                .params
+                .extend(create_params_for_newton_raphson_z_4());
+            "NewtonRaphsonZ4".to_string()
+        }
+        Some(&"NovaNewtonRaphsonZ3") => {
+            fractal_calcul_state
+                .params
+                .extend(create_params_for_nova_newton_raphson_z_3());
+            "NovaNewtonRaphsonZ3".to_string()
+        }
+        Some(&"NovaNewtonRaphsonZ4") => {
+            fractal_calcul_state
+                .params
+                .extend(create_params_for_nova_newton_raphson_z_4());
+            "NovaNewtonRaphsonZ4".to_string()
         }
         _ => {
-            // Nombres d'arguments incorrects
-            eprintln!("Error : Invalid number of arguments !");
-            eprintln!("wrong flag, missing information, try --help for more information",);
-            exit(1);
+            fractal_calcul_state
+                .params
+                .extend(create_params_for_julia());
+            "Julia".to_string()
         }
-    }
-    fractal_to_calcul
+    };
 }
