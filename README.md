@@ -84,12 +84,15 @@ Pour lancer une instance du serveur:
 
 ```bash
 $ cd target/release
-$ ./server --fractal Mandelbrot --ip=127.0.0.1
+$ ./server --fractal=Mandelbrot --ip=127.0.0.1 --port=8787
 ```
 
 Par defaut, le serveur est parametré pour demander le calcul d'une fractal Julia.
 
 Pour que ces calculs soient effectués, il est nécessaire d'avoir un client qui se connecte à ce serveur.
+Lorsque le serveur a tous les calculs pour générer la fractale finale, une image est créée dans le répertoire courant:
+
+> ./image/server/
 
 2. Client:
 
@@ -103,8 +106,18 @@ $ ./worker --help
 
 ```
 Usage: worker <ip> <port>
-Default value for ip is localhost
-Default value for port is 8787
+
+Options:
+
+   --ip
+      Choose the ip the server while listen tp
+      Default value is localhost
+      ex: --ip=0.0.0.0
+
+   --port
+      Choose the port
+      Default value is 8787
+      ex: --port=8080
 ```
 
 Pour utiliser le client:
@@ -115,6 +128,9 @@ $ ./worker
 ```
 
 Par défault, le client se connecte en localhost sur le port 8787.
+Lorsque le client se connecte, il effectue une demande de tâche au serveur. Lorsque les calculs liés à la tâche sont effectué, une image est créée dans le répertoire courant:
+
+> ./image/worker/
 
 ## Contributions
 
