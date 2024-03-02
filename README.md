@@ -11,6 +11,7 @@ Fractal Processing Server est une application serveur basée sur Rust conçue po
 - [Installation](#installation)
 - [Utilisation](#utilisation)
 - [Exemples](#exemples)
+- [Organisation du projet](#organisation)
 - [Contributions](#contributions)
 - [Licence](#licence)
 
@@ -131,6 +132,41 @@ Par défault, le client se connecte en localhost sur le port 8787.
 Lorsque le client se connecte, il effectue une demande de tâche au serveur. Lorsque les calculs liés à la tâche sont effectué, une image est créée dans le répertoire courant:
 
 > ./image/worker/
+
+## Organisation du projet
+
+1. Organisation d'équipe
+
+Notre équipe a travaillé principalement en pair/mob programming. L'idée était de centraliser les idées lors de réunion vocale sur Discord pendant qu'une personne a tour de rôle écrivait/modifiait le code. Cela explique aussi pourquoi la plupart des commits sur Git sont sous le compte de Damien (son ordinateur était la référence pour l'écriture).
+
+2. Demarche d'élaboration
+
+Nous avons répartis notre travail en plusieurs etapes de conception.  
+Cela est dû à notre montée en compétences avec l'avancée des cours et la pratique.  
+Le schéma suivant a été suivi:
+
+- Mise en place des différents types de données/structures
+- Creation du client
+- Gestion des calculs des differentes fractales avec serveur de test
+- Creation d'un serveur basique sans thread
+- Refactorisation global du projet pour avoir 4 crates (client/serveur/lib partagées/complexes)
+- Gestion des erreurs sur tout le projet
+- Modification du serveur avec threads
+- Documentation
+
+Le code a été refactoré de nombreuses fois au cours du projet.
+
+3. Spécificités du projet
+
+N'ayant pas réussi à faire une interface graphique au niveau du serveur, le thread du serveur génère une nouvelle fractale aléatoire à calculer 5sec après la fin de celle en cours.  
+Chaque calcul génère une image pour le client, ainsi que pour le serveur lorsque toutes les tâches ont été complétées. **(attention cela fait rapidement beaucoup d'images !)**  
+Documentation via Rustdoc (point d'entrée html dans /documentation)
+
+4. Bonus du projet
+
+- Serveur multi thread
+- Calcul client en parallèle avec Rayon
+- Aucun unwrap(), panic() ou expect() (ni unsafe !)
 
 ## Contributions
 
